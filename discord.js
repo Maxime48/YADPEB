@@ -2,10 +2,16 @@ const {
     DISCORD_TOKEN,
     DISCORD_PREFIX,
     DISCORD_OWNER,
-    BASE_URL
+	GIVEWAY_CHANNEL,
+	GIVEWAY_CHANNEL_COMMUNITY,
+    BASE_URL,
+	STATUS_URL,
+	STATUS_CHANNEL
 } = process.env;
 
 const Discord = require("discord.js");
+const { GiveawaysManager } = require("discord-giveaways");
+const ms = require("ms");
 const client = new Discord.Client();
 client.login(DISCORD_TOKEN);
 
@@ -16,10 +22,11 @@ const autoresponse = require("./automatic/auto-response.js");
 
 const paypal = require("./commands/paypal.js");
 const rules = require("./commands/rules.js");
+const giveaway = require("./commands/giveaway.js");
 
 const activities_list = [
-    "with your sanity.", 
-    "with p:help "
+    `with your sanity.`, 
+    `with ${DISCORD_PREFIX}help `
     ];
 
 client.on("ready", () => {
@@ -32,9 +39,22 @@ client.on("ready", () => {
 		if (act === 2) {act=0;}
     }, 15000);
 	
-	webstatus.init(request,Discord,client);
+	webstatus.init(request,Discord,client,STATUS_URL,STATUS_CHANNEL);
 	
 });
+
+const manager = new GiveawaysManager(client, {
+    storage: "./giveaways.json",
+    updateCountdownEvery: 10000,
+    default: {
+        botsCanWin: false,
+        exemptPermissions: [],
+        embedColor: "#FF0000",
+        reaction: "🎉"
+    }
+});
+
+client.giveawaysManager = manager;
 
 client.on("message", (message) => {
 
@@ -64,7 +84,7 @@ client.on("message", (message) => {
 		.setAuthor(`Hello, ${message.member.user.tag}`, message.member.user.displayAvatarURL())
 		.setDescription("Log:")
 		.addField("Error:", "you must be 'paypalmod'.", true)
-		.addField("Try this instead:", `p:help`, true)
+		.addField("Try this instead:", `${DISCORD_PREFIX}:help`, true)
 		.addField("You are trying to:", ` Create an invoice`)
 		.setColor("#0091fc");	
 				
@@ -80,12 +100,12 @@ client.on("message", (message) => {
 			const embedhelp = new Discord.MessageEmbed()
 			.setAuthor(`Hello, ${message.member.user.tag}`, message.member.user.displayAvatarURL())
 			.setDescription("Command list:")
-			.addField("Paypal | admin:", "p:create @user EUR details", true)
-			.addField("Rules command details", `p:rule help`, true)
-			.addField("Giveaway command details:", `p:giveaway help`, true)
-			.addField("Ping the bot: ", `p:ping`)
-			.addField("Block auto response on error messages: ", `p:ignore`, true)
-			.addField("Print website status: ", `p:webstatus`, true)
+			.addField("Paypal | admin:", `${DISCORD_PREFIX}create @user EUR details`, true)
+			.addField("Rules command details", `${DISCORD_PREFIX}rule help`, true)
+			.addField("Giveaway command details:", `${DISCORD_PREFIX}giveaway help`, true)
+			.addField("Ping the bot: ", `${DISCORD_PREFIX}ping`)
+			.addField("Block auto response on error messages: ", `${DISCORD_PREFIX}ignore`, true)
+			.addField("Print website status: ", `${DISCORD_PREFIX}webstatus`, true)
 			.setColor("#22069c")	
 			.setFooter('Please note that this might change');
 				
@@ -110,8 +130,8 @@ client.on("message", (message) => {
 			
 			message.delete(); 
 		   
-            // Then It Edits the message with the ping variable embed that you created
-            m.edit(embed)
+            // Then It Edits the message with the ping variable embed that you created | seems useless
+			//m.edit(embedping)
         });
 	}	
 	
@@ -120,6 +140,52 @@ client.on("message", (message) => {
 		webstatus.webstatuscommand(request,Discord,message);
 	}
 	
+	if(command === 'giveaway')
+	{
+		if(args[0] === 'help')
+		{
+			giveaway.help(Discord,message);
+		}
+		else if(args[0] === 'mod')
+		{
+			if(!(message.member.hasPermission("ADMINISTRATOR")))
+			{
+
+				const criticalpermission = new Discord.MessageEmbed()
+				.setAuthor(`Hello, ${message.member.user.tag}`, message.member.user.displayAvatarURL())
+				.setDescription("Error infos:")
+				.addField("Permission error:", `You are not administrator`, true)
+				.setColor("#b80b0b")	
+				
+				message.channel.send(criticalpermission);				
+			}
+			else
+			{
+				giveaway.create(Discord,message,args,client,GIVEWAY_CHANNEL,GIVEWAY_CHANNEL_COMMUNITY,ms)
+			}
+		}
+		else if(args[0] === 'community')
+		{
+			giveaway.create(Discord,message,args,client,GIVEWAY_CHANNEL,GIVEWAY_CHANNEL_COMMUNITY,ms)
+		}
+		message.delete();
+	}
+	
+	if(command === 'apitest')
+	{
+		const url = 'http://api.open-notify.org/astros.json';
+		
+		request(url, function (error, response, body) {
+			if(!error && response.statusCode == 200){
+				let json = JSON.parse(body);
+				console.log(json);
+			}
+			else
+			{
+				msg.reply('Failed api test');
+			}
+		});
+	}
 
 });
 

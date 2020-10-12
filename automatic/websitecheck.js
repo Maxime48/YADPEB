@@ -1,7 +1,7 @@
 var status = ''; 
 var status_previous = '';
 
-function init(request,Discord,client){
+function init(request,Discord,client,url_stats,STATUS_CHANNEL){
 	
 	//website status
 	var online = 0;
@@ -11,7 +11,7 @@ function init(request,Discord,client){
 	var more = '';
 	
 	setInterval(() => {
-		request('https://panel.alama.eu/', function (error, response, body) {
+		request(url_stats, function (error, response, body) {
 			if(!error && response.statusCode == 200){
 				if(online => online_limit)
 				{
@@ -47,7 +47,7 @@ function init(request,Discord,client){
 					.setColor("#42f563")	
 					.setFooter('This might not be definitive');
 					
-					client.channels.cache.get('716019325806444568').send(embedstatus);
+					client.channels.cache.get(STATUS_CHANNEL).send(embedstatus);
 				}
 				else if (status === 'offline')
 				{
@@ -61,7 +61,7 @@ function init(request,Discord,client){
 					.setColor("#c9263c")	
 					.setFooter('This might not be definitive');	
 					
-					client.channels.cache.get('716019325806444568').send(embedstatus);
+					client.channels.cache.get(STATUS_CHANNEL).send(embedstatus);
 				}
 				
 			}

@@ -1,6 +1,10 @@
 require("dotenv").config();
 const {
     BASE_URL,
+	PORT,
+	SSL_PRIVKEYPEM,
+	SSL_CERTPEM,
+	STEP,
     DISCORD_LOGS_CHANNEL,
     PAYPAL_USERNAME,
     PAYPAL_PASSWORD,
@@ -30,6 +34,16 @@ const paypal = Paypal.init(
     PAYPAL_MODE === "SANDBOX"
 );
 
+const language =[
+"Merci, ",
+"Nous avons bien reçu votre paiement, merci de votre confiance !",
+"Vous avez déjà effectué ce paiment!",
+"Quelque chose s'est mal passé, veuillez réessayer!",
+"Bonjour, ",
+`Merci,`,
+"Nous avons bien reçu votre paiement, nous vous remercions pour votre confiance !"
+];
+
 const paypalTokens = [];
 
 app.use(morgan("dev"))
@@ -48,19 +62,19 @@ app.get("/payment/:memberID/:paymentID", fetchPayment, (req, res) => {
         return res.render("payment-infos", {
             username: req.payment.username,
             avatarURL: req.payment.avatarURL,
-            msg: "Merci, ",
-            text: "Nous avons bien reçu votre paiement, merci de votre confiance !"
+            msg: language[0],
+            text: language[1]
         });
     }
     if(req.query.error){
         const errors = {
-            "already_paid": "Vous avez déjà effectué ce paiment!",
-            "unknown": "Quelque chose s'est mal passé, veuillez réessayer!"
+            "already_paid": language[2],
+            "unknown": language[3]
         };
         return res.render("payment-infos", {
             username: req.payment.username,
             avatarURL: req.payment.avatarURL,
-            msg: "Bonjour, ",
+            msg: language[4],
             text: errors[req.query.error] || errors.unknown
         });
     }
@@ -108,8 +122,8 @@ app.get("/check", (req, res) => {
         paramArray = paramArray.slice(3, 7);
         const user = await client.users.fetch(paramArray[3]);
         const embed = new Discord.MessageEmbed()
-            .setAuthor(`Merci, ${user.username}`, user.displayAvatarURL())
-            .setDescription("Nous avons bien reçu votre paiement, nous vous remercions pour votre confiance !")
+            .setAuthor(`${language[5]} ${user.username}`, user.displayAvatarURL())
+            .setDescription(language[6])
             .setColor("#0091fc");
         user.send(embed);
 
@@ -117,15 +131,15 @@ app.get("/check", (req, res) => {
         const ip = rawIP.split("").filter((c) => !isNaN(c) || c === ".").join("");
       
         const logsEmbed = new Discord.MessageEmbed()
-            .setAuthor(`Paiement de ${user.tag}`, user.displayAvatarURL())
+            .setAuthor(`Payment from ${user.tag}`, user.displayAvatarURL())
             .addField("ID de facture", paramArray[0], true)
-            .addField("Pays", data.COUNTRYCODE, true)
+            .addField("Country", data.COUNTRYCODE, true)
             .addField("IP", ip, true)
-            .addField("Prénom", data.FIRSTNAME, true)
-            .addField("Nom", data.LASTNAME, true)
+            .addField("Name", data.FIRSTNAME, true)
+            .addField("Family name", data.LASTNAME, true)
             .addField("Email", data.EMAIL, true)
-            .addField("Prix", `${data.PAYMENTINFO_0_AMT}€`, true)
-            .addField("Taxe", `${data.PAYMENTINFO_0_FEEAMT}€`, true)
+            .addField("Price", `${data.PAYMENTINFO_0_AMT}€`, true)
+            .addField("Tax", `${data.PAYMENTINFO_0_FEEAMT}€`, true)
             .addField("Reçu", `${data.PAYMENTINFO_0_AMT-data.PAYMENTINFO_0_FEEAMT}€`, true)
             .setColor("#0091fc");
         
@@ -150,13 +164,23 @@ app.get("*", (req, res) => {
   return res.status(404).render("404");
 });
 
-/* const listener = app.listen(3200, () => {
+/* const listener = app.listen(PORT, () => {
     console.log("Your app is listening on port " + listener.address().port);
 }); */
 
-const listener = https.createServer({
-    key: fs.readFileSync('/etc/letsencrypt/live/order.alama.eu/privkey.pem'),
-    cert: fs.readFileSync('/etc/letsencrypt/live/order.alama.eu/cert.pem'),
-}, app)
-.listen(3200);
-console.log("Your app is listening on port " + listener.address().port);
+if(STEP === "install")
+{
+	const listener = app.listen(PORT, () => {
+		console.log("Install mode | Your app is listening on port " + listener.address().port);
+	}); 	
+} else if(STEP === "live"){
+	const listener = https.createServer({
+		key: fs.readFileSync(SSL_PRIVKEYPEM),
+		cert: fs.readFileSync(SSL_CERTPEM),
+	}, app)
+	.listen(PORT);
+	console.log("Live | Your app is listening on port " + listener.address().port);
+} else {
+	console.log("Bad input detected");
+}
+
