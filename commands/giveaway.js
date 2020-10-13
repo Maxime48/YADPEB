@@ -21,7 +21,7 @@ function create(Discord,message,args,client,GIVEWAY_CHANNEL,GIVEWAY_CHANNEL_COMM
 		const modc = client.channels.cache.get(GIVEWAY_CHANNEL);		
 		client.giveawaysManager.start(modc, {
 			time: ms(args[1]),
-            prize: args.slice(2).join(" "),
+            prize: args.slice(3).join(" "),
             winnerCount: parseInt(args[2]),
 		messages: {
 			giveaway: "🎉🎉 **GIVEAWAY** 🎉🎉",
@@ -51,7 +51,7 @@ function create(Discord,message,args,client,GIVEWAY_CHANNEL,GIVEWAY_CHANNEL_COMM
 		const comc = client.channels.cache.get(GIVEWAY_CHANNEL_COMMUNITY);
 		client.giveawaysManager.start(comc, {
 			time: ms(args[1]),
-            prize: args.slice(2).join(" "),
+            prize: args.slice(3).join(" "),
             winnerCount: parseInt(args[2]),
 		messages: {
 			giveaway: "🎉🎉 **GIVEAWAY** 🎉🎉",
