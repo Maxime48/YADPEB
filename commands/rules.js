@@ -56,7 +56,7 @@ function rules(request,Discord,message,args){
 		const userid = args[1];
 		
 		
-		if ((rulenumber != null) && (rulenumber <= rules.length) && (rulenumber > 0))
+		if ((rulenumber != null) && (rulenumber <= rules.length) && (rulenumber >= 0))
 		{	
 			if (userid != null)
 			{
