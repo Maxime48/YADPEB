@@ -9,12 +9,12 @@ services:
     environment:
       APACHE_RUN_USER: www-data
       APACHE_RUN_GROUP: www-data
-      SERVER_NAME: alama.host
+      SERVER_NAME: yadpeb.alama.host
     restart: always
     networks:
       - caddy
     labels:
-      caddy: alama.host
+      caddy: yadpeb.alama.host
       caddy.reverse_proxy: "{{upstreams 80}}"
 
 networks:
